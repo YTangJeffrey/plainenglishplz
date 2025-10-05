@@ -1,0 +1,12 @@
+node_modules
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+dist
+dist-ssr
+.vite
+.DS_Store
+.env
+.env.*
+.env.example
+*.local
