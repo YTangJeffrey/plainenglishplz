@@ -1,34 +1,37 @@
 # Plain English, Please
 
-A Vite + React prototype that captures a museum label, lets OpenAI's vision model read it, and returns a plain-language explanation with follow-up Q&A.
+Monorepo for the "Plain English, Please" prototype. The project now has a secure backend that proxies all OpenAI calls and a Vite-powered React frontend.
 
-## Features
-- Browser-based webcam capture optimised for mobile (environment-facing camera where available).
-- Optional photo upload if you already snapped the label elsewhere.
-- Sends the captured image directly to OpenAI's `gpt-4o-mini` vision model and requests structured JSON.
-- Displays the extracted label text, simplified explanation, and quick follow-up suggestions tailored to the selected audience tone.
-- Lightweight chat experience that remembers the original label context for additional questions.
+## Packages
+- `web/` – React + Vite single-page app for capturing or uploading artwork labels and chatting with the museum guide.
+- `server/` – Express API that handles OpenAI vision + chat requests and stores lightweight in-memory sessions.
 
-## Getting Started
-1. Install dependencies (choose a package manager):
+## Prerequisites
+- Node.js 18+
+- An OpenAI API key with access to GPT-4o or GPT-4o-mini.
+
+## Setup
+1. Install dependencies (from the repo root):
    ```bash
    npm install
-   # or
-   pnpm install
    ```
-2. Copy the environment template and paste your temporary OpenAI key (local use only):
-   ```bash
-   cp .env.example .env.local
-   # edit .env.local and set VITE_OPENAI_API_KEY
-   ```
-3. Run the development server:
+2. Configure environment files:
+   - Frontend: copy `web/.env.example` to `web/.env.local` (already set to `http://localhost:4000` by default).
+   - Backend: copy `server/.env.example` to `server/.env` and set `OPENAI_API_KEY`.
+3. Run both apps together:
    ```bash
    npm run dev
    ```
-4. Open the provided localhost URL, allow camera access, and test the flow.
+   - Frontend: http://localhost:5173
+   - Backend: http://localhost:4000 (health check at `/health`).
 
-## Notes
-- This prototype calls OpenAI directly from the browser. Do **not** deploy with an exposed API key—replace the direct call with a thin server-side proxy before sharing widely.
-- The app requests `getUserMedia` with the environment-facing camera when available. Desktop browsers will default to the built-in webcam.
-- Vision responses can be inaccurate in low-light or with stylised fonts; keep a manual input fallback on the roadmap.
-- Prompt templates and tones live in `src/lib/promptTemplates.ts` so you can iterate quickly.
+## Useful Scripts
+- `npm run dev:web` – start only the Vite dev server.
+- `npm run dev:server` – start only the Express API (with automatic reload via `tsx`).
+- `npm run build` – build both packages (server output in `server/dist`, web output in `web/dist`).
+- `npm run typecheck` – run TypeScript in both workspaces.
+
+## Deployment Notes
+- Do **not** expose your OpenAI key in the browser bundle. The backend already keeps it server-side; deploy the API and point the frontend at the deployed URL with `VITE_API_BASE_URL`.
+- The server stores sessions in memory for rapid prototyping. Use a persistent store (Redis, database) before deploying to production or scaling beyond a single instance.
+- Add auth and rate limiting before sharing broadly in a museum environment.

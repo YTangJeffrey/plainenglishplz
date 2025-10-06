@@ -2,26 +2,19 @@
   "name": "plainenglishplz",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
+  "workspaces": ["web", "server"],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dev": "npm-run-all --parallel dev:server dev:web",
+    "dev:web": "npm --prefix web run dev",
+    "dev:server": "npm --prefix server run dev",
+    "build": "npm-run-all build:server build:web",
+    "build:web": "npm --prefix web run build",
+    "build:server": "npm --prefix server run build",
+    "typecheck": "npm-run-all typecheck:server typecheck:web",
+    "typecheck:web": "npm --prefix web run typecheck",
+    "typecheck:server": "npm --prefix server run typecheck"
   },
   "devDependencies": {
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react-swc": "^3.7.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.8"
-  },
-  "description": "A Vite + React prototype that captures a museum label, lets OpenAI's vision model read it, and returns a plain-language explanation with follow-up Q&A.",
-  "main": "index.js",
-  "author": "",
-  "license": "ISC"
+    "npm-run-all": "^4.1.5"
+  }
 }

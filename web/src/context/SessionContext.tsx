@@ -9,6 +9,7 @@ interface SessionState {
   messages: ChatMessage[];
   capturedImage: string | null;
   error: string | null;
+  sessionId: string | null;
 }
 
 type SessionAction =
@@ -19,6 +20,7 @@ type SessionAction =
   | { type: 'APPEND_MESSAGE'; message: ChatMessage }
   | { type: 'SET_IMAGE'; image: string | null }
   | { type: 'SET_ERROR'; error: string | null }
+  | { type: 'SET_SESSION_ID'; sessionId: string | null }
   | { type: 'RESET' };
 
 const initialState: SessionState = {
@@ -28,6 +30,7 @@ const initialState: SessionState = {
   messages: [],
   capturedImage: null,
   error: null,
+  sessionId: null,
 };
 
 const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
@@ -46,6 +49,8 @@ const sessionReducer = (state: SessionState, action: SessionAction): SessionStat
       return { ...state, capturedImage: action.image };
     case 'SET_ERROR':
       return { ...state, error: action.error };
+    case 'SET_SESSION_ID':
+      return { ...state, sessionId: action.sessionId };
     case 'RESET':
       return { ...initialState, tone: state.tone };
     default:
@@ -61,6 +66,7 @@ interface SessionContextValue extends SessionState {
   appendMessage: (message: ChatMessage) => void;
   setCapturedImage: (image: string | null) => void;
   setError: (error: string | null) => void;
+  setSessionId: (sessionId: string | null) => void;
   resetSession: () => void;
 }
 
@@ -78,6 +84,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     appendMessage: (message) => dispatch({ type: 'APPEND_MESSAGE', message }),
     setCapturedImage: (image) => dispatch({ type: 'SET_IMAGE', image }),
     setError: (error) => dispatch({ type: 'SET_ERROR', error }),
+    setSessionId: (sessionId) => dispatch({ type: 'SET_SESSION_ID', sessionId }),
     resetSession: () => dispatch({ type: 'RESET' }),
   }), 
   [state]);

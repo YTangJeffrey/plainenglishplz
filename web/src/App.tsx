@@ -24,12 +24,14 @@ const App = () => {
     appendMessage,
     setCapturedImage,
     setError,
+    sessionId,
+    setSessionId,
     error: sessionError,
   } = useSession();
 
-  const { generateExplanation, sendFollowUp, isLoading, error: aiError, clearError } = useOpenAI();
+  const { generateExplanation, sendFollowUp, isLoading, error: apiError, clearError } = useOpenAI();
 
-  const combinedError = sessionError ?? aiError ?? null;
+  const combinedError = sessionError ?? apiError ?? null;
 
   const handleCapture = useCallback(
     async (dataUrl: string) => {
@@ -38,7 +40,8 @@ const App = () => {
       setError(null);
 
       try {
-        const result = await generateExplanation({ imageBase64: dataUrl, tone });
+        const { sessionId: newSessionId, result } = await generateExplanation({ imageBase64: dataUrl, tone });
+        setSessionId(newSessionId);
         setLabelResult(result);
         setMessages([]);
         setStatus('ready');
@@ -46,14 +49,15 @@ const App = () => {
         const message = err instanceof Error ? err.message : 'Unable to analyze the label.';
         setError(message);
         setStatus('error');
+        setSessionId(null);
       }
     },
-    [generateExplanation, setCapturedImage, setError, setLabelResult, setMessages, setStatus, tone],
+    [generateExplanation, setCapturedImage, setError, setLabelResult, setMessages, setSessionId, setStatus, tone],
   );
 
   const handleFollowUp = useCallback(
     async (question: string) => {
-      if (!labelResult) {
+      if (!labelResult || !sessionId) {
         return;
       }
 
@@ -64,17 +68,10 @@ const App = () => {
         createdAt: Date.now(),
       };
 
-      const historySnapshot = [...messages];
       appendMessage(userMessage);
 
       try {
-        const response = await sendFollowUp({
-          tone,
-          labelText: labelResult.labelText,
-          history: historySnapshot,
-          explanation: labelResult.explanation,
-          question,
-        });
+        const response = await sendFollowUp({ sessionId, question });
 
         const assistantMessage: ChatMessage = {
           id: createId(),
@@ -90,7 +87,7 @@ const App = () => {
         setError(message);
       }
     },
-    [appendMessage, labelResult, messages, sendFollowUp, setError, setLabelResult, tone],
+    [appendMessage, labelResult, sendFollowUp, sessionId, setError, setLabelResult],
   );
 
   const handleSuggestion = useCallback(
@@ -115,7 +112,8 @@ const App = () => {
   const resetFlow = useCallback(() => {
     resetSession();
     clearError();
-  }, [clearError, resetSession]);
+    setSessionId(null);
+  }, [clearError, resetSession, setSessionId]);
 
   const isProcessing = status === 'processing' || isLoading;
 
@@ -137,7 +135,7 @@ const App = () => {
             <CameraCapture onCapture={handleCapture} disabled={isProcessing} onError={setError} />
             <p className="helper-text">
               Hold your phone close enough to read the text or upload a photo from your camera roll. We will analyze the
-              image on-device and send it to OpenAI for a quick summary.
+              image on-device and send it to the museum guide for a quick summary.
             </p>
             {status === 'error' && (
               <button type="button" className="ghost-button" onClick={resetFlow}>
