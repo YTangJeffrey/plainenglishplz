@@ -1,37 +1,40 @@
-# Plain English, Please
+# Plain English, Please (Next.js)
 
-Monorepo for the "Plain English, Please" prototype. The project now has a secure backend that proxies all OpenAI calls and a Vite-powered React frontend.
+A Next.js 14 app that captures museum labels, lets OpenAI’s vision model read them, and returns plain-English explanations with conversational follow-ups.
 
-## Packages
-- `web/` – React + Vite single-page app for capturing or uploading artwork labels and chatting with the museum guide.
-- `server/` – Express API that handles OpenAI vision + chat requests and stores lightweight in-memory sessions.
-
-## Prerequisites
-- Node.js 18+
-- An OpenAI API key with access to GPT-4o or GPT-4o-mini.
-
-## Setup
-1. Install dependencies (from the repo root):
+## Getting Started
+1. Install dependencies:
    ```bash
    npm install
    ```
-2. Configure environment files:
-   - Frontend: copy `web/.env.example` to `web/.env.local` (already set to `http://localhost:4000` by default).
-   - Backend: copy `server/.env.example` to `server/.env` and set `OPENAI_API_KEY`.
-3. Run both apps together:
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Update `.env.local` with your `OPENAI_API_KEY`.
+3. Run the development server:
    ```bash
    npm run dev
    ```
-   - Frontend: http://localhost:5173
-   - Backend: http://localhost:4000 (health check at `/health`).
+4. Open http://localhost:3000 in your browser, allow the camera, or upload a label photo to test the flow.
 
-## Useful Scripts
-- `npm run dev:web` – start only the Vite dev server.
-- `npm run dev:server` – start only the Express API (with automatic reload via `tsx`).
-- `npm run build` – build both packages (server output in `server/dist`, web output in `web/dist`).
-- `npm run typecheck` – run TypeScript in both workspaces.
+## Project Structure
+- `app/` – Next.js App Router pages and API routes.
+  - `page.tsx` renders the main experience with a client-side session provider.
+  - `api/guide/analyze` and `api/guide/follow-up` proxy requests to OpenAI while keeping the API key server-side.
+- `components/` – Reusable UI pieces such as camera capture, tone selector, result & chat panels.
+- `hooks/` – Client-side hooks for talking to the guide API.
+- `lib/` – Shared helpers (prompt templates, session store, JSON parsers, OpenAI response schemas).
+- `types/` – Shared TypeScript types and tone metadata.
+
+## Scripts
+- `npm run dev` – Start the Next.js dev server.
+- `npm run build` – Build the production bundle.
+- `npm run start` – Run the production server locally.
+- `npm run lint` – Check linting rules.
+- `npm run typecheck` – Run TypeScript without emitting files.
 
 ## Deployment Notes
-- Do **not** expose your OpenAI key in the browser bundle. The backend already keeps it server-side; deploy the API and point the frontend at the deployed URL with `VITE_API_BASE_URL`.
-- The server stores sessions in memory for rapid prototyping. Use a persistent store (Redis, database) before deploying to production or scaling beyond a single instance.
-- Add auth and rate limiting before sharing broadly in a museum environment.
+- Provide `OPENAI_API_KEY` to your hosting platform as a secret/env variable. The API routes run on the server, so the key never ships to the browser.
+- The session store keeps data in-memory per server instance; swap it for a shared store (Redis, database) before scaling horizontally.
+- For Vercel, simply import the project, set the environment variable, and deploy—the API routes work out of the box.

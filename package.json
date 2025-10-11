@@ -1,26 +1,27 @@
 {
   "name": "plainenglishplz",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "web",
-    "server"
-  ],
   "scripts": {
-    "dev": "npm-run-all --parallel dev:server dev:web",
-    "dev:web": "npm --prefix web run dev",
-    "dev:server": "npm --prefix server run dev",
-    "build": "npm-run-all build:server build:web",
-    "build:web": "npm --prefix web run build",
-    "build:server": "npm --prefix server run build",
-    "typecheck": "npm-run-all typecheck:server typecheck:web",
-    "typecheck:web": "npm --prefix web run typecheck",
-    "typecheck:server": "npm --prefix server run typecheck"
-  },
-  "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "firebase": "^12.3.0"
+    "next": "14.2.5",
+    "openai": "^4.52.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.11",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.5",
+    "typescript": "^5.4.5"
   }
 }
