@@ -203,10 +203,29 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
       let blobToRead: Blob = file;
 
       if (file.type === 'image/heic' || file.type === 'image/heif') {
+        const ensureArrayBuffer = (input: ArrayBufferLike): ArrayBuffer => {
+          if (input instanceof ArrayBuffer) {
+            return input;
+          }
+
+          const view = new Uint8Array(input);
+          const copy = new Uint8Array(view.length);
+          copy.set(view);
+          return copy.buffer;
+        };
+
         try {
-          const heic2any = (await import('heic2any')).default as (options: { blob: Blob; toType: string; quality?: number }) => Promise<Blob | ArrayBufferLike>;
+          const heic2any = (await import('heic2any')).default as (
+            options: { blob: Blob; toType: string; quality?: number }
+          ) => Promise<Blob | ArrayBufferLike>;
           const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
-          blobToRead = converted instanceof Blob ? converted : new Blob([converted], { type: 'image/jpeg' });
+          if (converted instanceof Blob) {
+            blobToRead = converted;
+          } else if (converted instanceof ArrayBuffer) {
+            blobToRead = new Blob([converted], { type: 'image/jpeg' });
+          } else {
+            blobToRead = new Blob([ensureArrayBuffer(converted)], { type: 'image/jpeg' });
+          }
         } catch (conversionError) {
           console.error('HEIC conversion failed', conversionError);
           throw new Error('Unable to process HEIC image. Please try a different photo.');
