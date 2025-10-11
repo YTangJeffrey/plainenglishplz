@@ -161,44 +161,67 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
+    const cleanUp = () => {
+      setIsReadingFile(false);
+      event.target.value = '';
+    };
+
     if (!file.type.startsWith('image/')) {
       const message = 'Please choose an image file.';
       setError(message);
       onError?.(message);
-      event.target.value = '';
+      cleanUp();
       return;
     }
 
-    const reader = new FileReader();
     setIsReadingFile(true);
     setError(null);
 
-    reader.onload = () => {
-      setIsReadingFile(false);
-      event.target.value = '';
-      const result = reader.result;
-      if (typeof result === 'string') {
-        onCapture(result);
-      }
-    };
+    try {
+      const readAsDataUrl = (blob: Blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === 'string') {
+              resolve(result);
+            } else {
+              reject(new Error('Unsupported file result'));
+            }
+          };
+          reader.onerror = () => reject(new Error('Unable to read the selected file. Please try another image.'));
+          reader.readAsDataURL(blob);
+        });
 
-    reader.onerror = () => {
-      console.error('Unable to read the selected file');
-      setIsReadingFile(false);
-      event.target.value = '';
-      const message = 'Unable to read the selected file. Please try another image.';
+      let blobToRead: Blob = file;
+
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        try {
+          const heic2any = (await import('heic2any')).default as (options: { blob: Blob; toType: string; quality?: number }) => Promise<Blob | ArrayBufferLike>;
+          const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+          blobToRead = converted instanceof Blob ? converted : new Blob([converted], { type: 'image/jpeg' });
+        } catch (conversionError) {
+          console.error('HEIC conversion failed', conversionError);
+          throw new Error('Unable to process HEIC image. Please try a different photo.');
+        }
+      }
+
+      const dataUrl = await readAsDataUrl(blobToRead);
+      onCapture(dataUrl);
+    } catch (fileError) {
+      const message = fileError instanceof Error ? fileError.message : 'Unable to read the selected file. Please try another image.';
       setError(message);
       onError?.(message);
-    };
-
-    reader.readAsDataURL(file);
+    } finally {
+      cleanUp();
+    }
   };
 
   return (

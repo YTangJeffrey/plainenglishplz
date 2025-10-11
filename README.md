@@ -16,7 +16,7 @@ A Next.js 14 app that captures museum labels, lets OpenAI’s vision model read 
    ```bash
    npm run dev
    ```
-4. Open http://localhost:3000 in your browser, allow the camera, or upload a label photo to test the flow.
+4. Open http://localhost:3000 in your browser, allow the camera, or upload a label photo to test the flow (HEIC files are converted to JPEG client-side).
 
 ## Project Structure
 - `app/` – Next.js App Router pages and API routes.
