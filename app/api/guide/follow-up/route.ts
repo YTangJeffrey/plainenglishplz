@@ -5,6 +5,7 @@ import { followUpSystemPrompt, buildFollowUpUserPrompt } from '@/lib/prompts';
 import { followUpResponseFormat } from '@/lib/responseFormats';
 import { safeJsonParse } from '@/lib/json';
 import { appendToSession, getSession } from '@/lib/sessionStore';
+import { recordInteraction } from '@/lib/db';
 import type { ChatMessage } from '@/types';
 
 const MODEL = 'gpt-4o-mini';
@@ -58,7 +59,7 @@ export const POST = async (request: Request) => {
     }
 
     const { sessionId, question } = parsed.data;
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
 
     if (!session) {
       return NextResponse.json({ error: 'Session not found. Please rescan the label.' }, { status: 404 });
@@ -110,6 +111,10 @@ export const POST = async (request: Request) => {
     };
 
     appendToSession(sessionId, [userMessage, assistantMessage]);
+    await Promise.all([
+      recordInteraction(sessionId, 'user', question),
+      recordInteraction(sessionId, 'assistant', answer),
+    ]);
 
     return NextResponse.json({ answer, followupSuggestions }, { status: 200 });
   } catch (error) {

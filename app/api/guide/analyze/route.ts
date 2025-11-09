@@ -5,6 +5,8 @@ import { initialSystemPrompt, buildInitialUserPrompt } from '@/lib/prompts';
 import { initialResponseFormat } from '@/lib/responseFormats';
 import { safeJsonParse } from '@/lib/json';
 import { createSession } from '@/lib/sessionStore';
+import { uploadDataUrlToBlob } from '@/lib/blob';
+import { recordSession, recordInteraction } from '@/lib/db';
 import type { LabelResult } from '@/types';
 
 const MODEL = 'gpt-4o-mini';
@@ -91,7 +93,11 @@ export const POST = async (request: Request) => {
 
     const session = createSession(tone, result);
 
-    return NextResponse.json({ sessionId: session.id, result }, { status: 200 });
+    const imageUrl = await uploadDataUrlToBlob(imageBase64, session.id);
+    await recordSession(session.id, tone, result, imageUrl);
+    await recordInteraction(session.id, 'assistant', result.explanation);
+
+    return NextResponse.json({ sessionId: session.id, result, imageUrl }, { status: 200 });
   } catch (error) {
     console.error('[api/analyze] Unexpected error', error);
     return NextResponse.json(

@@ -2,6 +2,8 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
+const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5 MB limit for uploaded photos
+
 interface CameraCaptureProps {
   onCapture: (imageDataUrl: string) => void;
   disabled?: boolean;
@@ -181,6 +183,14 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
       return;
     }
 
+    if (file.size > MAX_UPLOAD_SIZE) {
+      const message = 'Please choose an image smaller than 5 MB.';
+      setError(message);
+      onError?.(message);
+      cleanUp();
+      return;
+    }
+
     setIsReadingFile(true);
     setError(null);
 
@@ -230,6 +240,10 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
           console.error('HEIC conversion failed', conversionError);
           throw new Error('Unable to process HEIC image. Please try a different photo.');
         }
+      }
+
+      if (blobToRead.size > MAX_UPLOAD_SIZE) {
+        throw new Error('Please choose an image smaller than 5 MB.');
       }
 
       const dataUrl = await readAsDataUrl(blobToRead);

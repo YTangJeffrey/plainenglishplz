@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { AudienceTone, ChatMessage, LabelResult } from '../types';
+import { fetchSessionWithHistory } from './db';
 
 interface SessionData {
   id: string;
@@ -32,7 +33,36 @@ export const createSession = (tone: AudienceTone, result: LabelResult): SessionD
   return session;
 };
 
-export const getSession = (sessionId: string) => sessions.get(sessionId) ?? null;
+export const getSession = async (sessionId: string): Promise<SessionData | null> => {
+  const inMemory = sessions.get(sessionId);
+  if (inMemory) {
+    return inMemory;
+  }
+
+  const persisted = await fetchSessionWithHistory(sessionId);
+  if (!persisted) {
+    return null;
+  }
+
+  const session: SessionData = {
+    id: sessionId,
+    tone: persisted.tone,
+    labelResult: persisted.labelResult,
+    history: persisted.history.length > 0
+      ? persisted.history
+      : [
+          {
+            id: `${sessionId}-assistant-initial`,
+            role: 'assistant',
+            content: persisted.labelResult.explanation,
+            createdAt: Date.now(),
+          },
+        ],
+  };
+
+  sessions.set(sessionId, session);
+  return session;
+};
 
 export const appendToSession = (sessionId: string, entries: ChatMessage[]) => {
   const session = sessions.get(sessionId);

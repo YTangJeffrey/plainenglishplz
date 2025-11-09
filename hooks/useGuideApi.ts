@@ -11,6 +11,7 @@ interface GenerateExplanationArgs {
 interface GenerateExplanationResult {
   sessionId: string;
   result: LabelResult;
+  imageUrl?: string | null;
 }
 
 interface FollowUpArgs {

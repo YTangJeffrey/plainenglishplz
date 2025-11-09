@@ -11,7 +11,9 @@ A Next.js 14 app that captures museum labels, lets OpenAI’s vision model read 
    ```bash
    cp .env.example .env.local
    ```
-   Update `.env.local` with your `OPENAI_API_KEY`.
+   Update `.env.local` with your `OPENAI_API_KEY`. For local Blob/Postgres testing also add:
+   - `BLOB_READ_WRITE_TOKEN` (from `vercel blob tokens create`)
+   - `POSTGRES_URL` pointing at your local Postgres instance
 3. Run the development server:
    ```bash
    npm run dev
@@ -36,5 +38,6 @@ A Next.js 14 app that captures museum labels, lets OpenAI’s vision model read 
 
 ## Deployment Notes
 - Provide `OPENAI_API_KEY` to your hosting platform as a secret/env variable. The API routes run on the server, so the key never ships to the browser.
+- If you want Blob uploads and Postgres logging in production, provision Vercel Blob + Vercel Postgres and set `BLOB_READ_WRITE_TOKEN` / `POSTGRES_URL` accordingly.
 - The session store keeps data in-memory per server instance; swap it for a shared store (Redis, database) before scaling horizontally.
 - For Vercel, simply import the project, set the environment variable, and deploy—the API routes work out of the box.
