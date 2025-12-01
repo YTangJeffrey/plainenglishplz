@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo, useReducer } from 'react';
-import type { AudienceTone, ChatMessage, LabelResult, SessionStatus } from '@/types';
+import type { AudienceTone, ChatMessage, CustomGuide, LabelResult, SessionStatus } from '@/types';
 
 interface SessionState {
   tone: AudienceTone;
@@ -11,6 +11,8 @@ interface SessionState {
   capturedImage: string | null;
   error: string | null;
   sessionId: string | null;
+  showTranscript: boolean;
+  customGuide: CustomGuide | null;
 }
 
 type SessionAction =
@@ -22,6 +24,8 @@ type SessionAction =
   | { type: 'SET_IMAGE'; image: string | null }
   | { type: 'SET_ERROR'; error: string | null }
   | { type: 'SET_SESSION_ID'; sessionId: string | null }
+  | { type: 'SET_SHOW_TRANSCRIPT'; show: boolean }
+  | { type: 'SET_CUSTOM_GUIDE'; guide: CustomGuide | null }
   | { type: 'RESET' };
 
 const initialState: SessionState = {
@@ -32,6 +36,8 @@ const initialState: SessionState = {
   capturedImage: null,
   error: null,
   sessionId: null,
+  showTranscript: false,
+  customGuide: null,
 };
 
 const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
@@ -52,8 +58,12 @@ const sessionReducer = (state: SessionState, action: SessionAction): SessionStat
       return { ...state, error: action.error };
     case 'SET_SESSION_ID':
       return { ...state, sessionId: action.sessionId };
+    case 'SET_SHOW_TRANSCRIPT':
+      return { ...state, showTranscript: action.show };
+    case 'SET_CUSTOM_GUIDE':
+      return { ...state, customGuide: action.guide };
     case 'RESET':
-      return { ...initialState, tone: state.tone };
+      return { ...initialState, tone: state.tone, customGuide: state.customGuide };
     default:
       return state;
   }
@@ -68,6 +78,8 @@ interface SessionContextValue extends SessionState {
   setCapturedImage: (image: string | null) => void;
   setError: (error: string | null) => void;
   setSessionId: (sessionId: string | null) => void;
+  setShowTranscript: (show: boolean) => void;
+  setCustomGuide: (guide: CustomGuide | null) => void;
   resetSession: () => void;
 }
 
@@ -86,6 +98,8 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
     setCapturedImage: (image) => dispatch({ type: 'SET_IMAGE', image }),
     setError: (error) => dispatch({ type: 'SET_ERROR', error }),
     setSessionId: (sessionId) => dispatch({ type: 'SET_SESSION_ID', sessionId }),
+    setShowTranscript: (show) => dispatch({ type: 'SET_SHOW_TRANSCRIPT', show }),
+    setCustomGuide: (guide) => dispatch({ type: 'SET_CUSTOM_GUIDE', guide }),
     resetSession: () => dispatch({ type: 'RESET' }),
   }), [state]);
 

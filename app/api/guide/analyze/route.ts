@@ -60,7 +60,11 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { tone, imageBase64 } = parsed.data;
+    const { tone, imageBase64, customGuide } = parsed.data;
+
+    if (tone === 'custom' && (!customGuide?.name?.trim() || !customGuide?.description?.trim())) {
+      return NextResponse.json({ error: 'Custom guide name and description are required.' }, { status: 400 });
+    }
     const openai = getClient();
 
     const completion = await openai.chat.completions.create({
@@ -70,7 +74,7 @@ export const POST = async (request: Request) => {
         {
           role: 'user',
           content: [
-            { type: 'text', text: buildInitialUserPrompt(tone) },
+            { type: 'text', text: buildInitialUserPrompt(tone, customGuide ?? undefined) },
             { type: 'image_url', image_url: { url: imageBase64 } },
           ],
         },
@@ -91,10 +95,10 @@ export const POST = async (request: Request) => {
       followupSuggestions: (payload.followup_suggestions ?? []).filter(Boolean),
     };
 
-    const session = createSession(tone, result);
+    const session = createSession(tone, result, customGuide ?? null);
 
     const imageUrl = await uploadDataUrlToBlob(imageBase64, session.id);
-    await recordSession(session.id, tone, result, imageUrl);
+    await recordSession(session.id, tone, result, imageUrl, customGuide ?? null);
     await recordInteraction(session.id, 'assistant', result.explanation);
 
     return NextResponse.json({ sessionId: session.id, result, imageUrl }, { status: 200 });

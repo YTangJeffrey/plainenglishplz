@@ -74,6 +74,7 @@ export const POST = async (request: Request) => {
           role: 'user',
           content: buildFollowUpUserPrompt(
             session.tone,
+            session.customGuide ?? undefined,
             session.labelResult.labelText,
             session.history,
             question,

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5 MB limit for uploaded photos
 
@@ -8,9 +8,18 @@ interface CameraCaptureProps {
   onCapture: (imageDataUrl: string) => void;
   disabled?: boolean;
   onError?: (message: string) => void;
+  showControls?: boolean;
+  useExternalTriggers?: boolean;
+  autoStart?: boolean;
 }
 
-export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCaptureProps) => {
+export interface CameraCaptureHandle {
+  startScan: () => void;
+  triggerUpload: () => void;
+}
+
+export const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(
+  ({ onCapture, disabled = false, onError, showControls = true, useExternalTriggers = false, autoStart = false }, ref) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -257,6 +266,21 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
     }
   };
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      startScan: handleStart,
+      triggerUpload: handleUploadClick,
+    }),
+    [handleStart, handleUploadClick],
+  );
+
+  useEffect(() => {
+    if (autoStart && !disabled && !isStreaming) {
+      handleStart();
+    }
+  }, [autoStart, disabled, isStreaming]);
+
   return (
     <div className="camera-capture">
       <div className="camera-frame">
@@ -268,43 +292,60 @@ export const CameraCapture = ({ onCapture, disabled = false, onError }: CameraCa
         <canvas ref={canvasRef} className="camera-canvas" hidden aria-hidden="true" />
       </div>
 
-      <div className="capture-actions">
-        {!isStreaming ? (
-          <button
-            className="primary-button"
-            onClick={handleStart}
-            disabled={disabled || isReadingFile}
-            type="button"
-          >
-            Scan Label
-          </button>
-        ) : (
-          <button
-            className="primary-button"
-            onClick={handleCapture}
-            disabled={!isReady || disabled || Boolean(error) || isReadingFile}
-            type="button"
-          >
-            {isReady ? 'Capture Label' : 'Preparing camera…'}
-          </button>
-        )}
+      {showControls && (
+        <div className="capture-actions">
+          {!useExternalTriggers && (
+            <>
+              {!isStreaming ? (
+                <button
+                  className="primary-button"
+                  onClick={handleStart}
+                  disabled={disabled || isReadingFile}
+                  type="button"
+                >
+                  Scan Label
+                </button>
+              ) : (
+                <button
+                  className="primary-button"
+                  onClick={handleCapture}
+                  disabled={!isReady || disabled || Boolean(error) || isReadingFile}
+                  type="button"
+                >
+                  {isReady ? 'Capture Label' : 'Preparing camera…'}
+                </button>
+              )}
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={handleUploadClick}
+                disabled={disabled || isReadingFile}
+              >
+                {isReadingFile ? 'Uploading…' : 'Upload Art Label'}
+              </button>
+            </>
+          )}
 
-        <button
-          className="ghost-button"
-          type="button"
-          onClick={handleUploadClick}
-          disabled={disabled || isReadingFile}
-        >
-          {isReadingFile ? 'Uploading…' : 'Upload Photo'}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={handleFileChange}
-        />
-      </div>
+          {useExternalTriggers && isStreaming && (
+            <button
+              className="primary-button"
+              onClick={handleCapture}
+              disabled={!isReady || disabled || Boolean(error) || isReadingFile}
+              type="button"
+            >
+              {isReady ? 'Capture Label' : 'Preparing camera…'}
+            </button>
+          )}
+        </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={handleFileChange}
+      />
     </div>
   );
-};
+});
+CameraCapture.displayName = 'CameraCapture';

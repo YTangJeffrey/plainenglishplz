@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import type { AudienceTone, ChatMessage, LabelResult } from '@/types';
+import type { AudienceTone, ChatMessage, CustomGuide, LabelResult } from '@/types';
 
 const connectionString = process.env.POSTGRES_URL;
 const hasDatabase = Boolean(connectionString);
@@ -41,9 +41,14 @@ const ensureTables = async () => {
         image_url TEXT,
         label_text TEXT,
         explanation TEXT,
+        custom_name TEXT,
+        custom_description TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+
+    await client.query(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS custom_name TEXT;`);
+    await client.query(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS custom_description TEXT;`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS interactions (
@@ -73,6 +78,7 @@ export const recordSession = async (
   tone: AudienceTone,
   result: LabelResult,
   imageUrl: string | null,
+  customGuide: CustomGuide | null,
 ) => {
   const client = getPool();
   if (!client) {
@@ -82,16 +88,18 @@ export const recordSession = async (
   await ensureTables();
 
   await client.query(
-    `INSERT INTO sessions (id, tone, image_url, label_text, explanation)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO sessions (id, tone, image_url, label_text, explanation, custom_name, custom_description)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (id)
      DO UPDATE SET
        tone = EXCLUDED.tone,
        image_url = EXCLUDED.image_url,
        label_text = EXCLUDED.label_text,
        explanation = EXCLUDED.explanation,
+       custom_name = EXCLUDED.custom_name,
+       custom_description = EXCLUDED.custom_description,
        created_at = NOW();`,
-    [sessionId, tone, imageUrl, result.labelText, result.explanation],
+    [sessionId, tone, imageUrl, result.labelText, result.explanation, customGuide?.name ?? null, customGuide?.description ?? null],
   );
 };
 
@@ -123,7 +131,7 @@ export const fetchSessionWithHistory = async (sessionId: string) => {
   await ensureTables();
 
   const sessionResult = await client.query(
-    `SELECT tone, image_url, label_text, explanation FROM sessions WHERE id = $1 LIMIT 1;`,
+    `SELECT tone, image_url, label_text, explanation, custom_name, custom_description FROM sessions WHERE id = $1 LIMIT 1;`,
     [sessionId],
   );
 
@@ -136,6 +144,8 @@ export const fetchSessionWithHistory = async (sessionId: string) => {
     image_url: string | null;
     label_text: string | null;
     explanation: string | null;
+    custom_name: string | null;
+    custom_description: string | null;
   };
 
   const interactionsResult = await client.query(
@@ -164,5 +174,8 @@ export const fetchSessionWithHistory = async (sessionId: string) => {
     imageUrl: sessionRow.image_url ?? null,
     labelResult,
     history,
+    customGuide: sessionRow.custom_name && sessionRow.custom_description
+      ? { name: sessionRow.custom_name, description: sessionRow.custom_description }
+      : null,
   };
 };

@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import type { AudienceTone, LabelResult } from '@/types';
+import type { AudienceTone, CustomGuide, LabelResult } from '@/types';
 
 interface GenerateExplanationArgs {
   imageBase64: string;
   tone: AudienceTone;
+  customGuide?: CustomGuide | null;
 }
 
 interface GenerateExplanationResult {
@@ -17,6 +18,7 @@ interface GenerateExplanationResult {
 interface FollowUpArgs {
   sessionId: string;
   question: string;
+  customGuide?: CustomGuide | null;
 }
 
 interface FollowUpResult {
@@ -44,19 +46,20 @@ const parseError = async (response: Response) => {
 };
 
 export const useGuideApi = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isFollowingUp, setIsFollowingUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const generateExplanation = useCallback(
-    async ({ imageBase64, tone }: GenerateExplanationArgs): Promise<GenerateExplanationResult> => {
-      setIsLoading(true);
+    async ({ imageBase64, tone, customGuide }: GenerateExplanationArgs): Promise<GenerateExplanationResult> => {
+      setIsAnalyzing(true);
       setError(null);
 
       try {
         const response = await fetch('/api/guide/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64, tone }),
+          body: JSON.stringify({ imageBase64, tone, customGuide }),
         });
 
         if (!response.ok) {
@@ -76,22 +79,22 @@ export const useGuideApi = () => {
         setError(message);
         throw err;
       } finally {
-        setIsLoading(false);
+        setIsAnalyzing(false);
       }
     },
     [],
   );
 
   const sendFollowUp = useCallback(
-    async ({ sessionId, question }: FollowUpArgs): Promise<FollowUpResult> => {
-      setIsLoading(true);
+    async ({ sessionId, question, customGuide }: FollowUpArgs): Promise<FollowUpResult> => {
+      setIsFollowingUp(true);
       setError(null);
 
       try {
         const response = await fetch('/api/guide/follow-up', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, question }),
+          body: JSON.stringify({ sessionId, question, customGuide }),
         });
 
         if (!response.ok) {
@@ -109,7 +112,7 @@ export const useGuideApi = () => {
         setError(message);
         throw err;
       } finally {
-        setIsLoading(false);
+        setIsFollowingUp(false);
       }
     },
     [],
@@ -120,7 +123,8 @@ export const useGuideApi = () => {
   return {
     generateExplanation,
     sendFollowUp,
-    isLoading,
+    isAnalyzing,
+    isFollowingUp,
     error,
     clearError,
   };

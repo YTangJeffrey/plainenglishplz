@@ -1,67 +1,38 @@
 'use client';
 
-import type { AudienceTone, LabelResult } from '@/types';
+import type { LabelResult } from '@/types';
 
 interface ResultPanelProps {
   result: LabelResult;
-  tone: AudienceTone;
-  onRetake: () => void;
-  onUseSuggestion: (question: string) => void;
+  showTranscript: boolean;
+  onToggleTranscript: (show: boolean) => void;
 }
 
-export const ResultPanel = ({ result, tone, onRetake, onUseSuggestion }: ResultPanelProps) => (
-  <section className="panel">
-    <header className="panel-header">
-      <div>
-        <p className="eyebrow">Explaining for</p>
-        <h2 className="panel-title">{toneLabel(tone)}</h2>
+export const ResultPanel = ({ result, showTranscript, onToggleTranscript }: ResultPanelProps) => {
+  const heading = 'Art label in plain English';
+
+  return (
+    <section className="outline-card result-panel">
+      <div className="result-header">
+        <h2 className="result-title">{heading}</h2>
+        <p className="result-date">{formatDate(new Date())}</p>
       </div>
-      <button type="button" className="ghost-button" onClick={onRetake}>
-        Retake photo
+      <p className="explanation-text">{result.explanation}</p>
+
+      <button
+        type="button"
+        className="link-button left-align"
+        onClick={() => onToggleTranscript(!showTranscript)}
+      >
+        {showTranscript ? 'Hide original script' : 'Show original script'}
       </button>
-    </header>
 
-    <div className="panel-body">
-      <div className="panel-card">
-        <p className="eyebrow">Label text (model transcription)</p>
+      {showTranscript && (
         <pre className="label-text">{result.labelText || 'No text detected.'}</pre>
-      </div>
-
-      <div className="panel-card">
-        <p className="eyebrow">Plain-English explanation</p>
-        <p className="explanation-text">{result.explanation}</p>
-      </div>
-
-      {result.followupSuggestions.length > 0 && (
-        <div className="panel-card">
-          <p className="eyebrow">Try asking</p>
-          <div className="suggestion-list">
-            {result.followupSuggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                className="suggestion-chip"
-                onClick={() => onUseSuggestion(suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
       )}
-    </div>
-  </section>
-);
-
-const toneLabel = (tone: AudienceTone) => {
-  switch (tone) {
-    case 'kids':
-      return 'Kids';
-    case 'curious':
-      return 'Curious Explorer';
-    case 'expert':
-      return 'Scholar';
-    default:
-      return 'General Visitor';
-  }
+    </section>
+  );
 };
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

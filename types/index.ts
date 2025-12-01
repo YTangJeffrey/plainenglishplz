@@ -1,4 +1,4 @@
-export type AudienceTone = 'kids' | 'general' | 'curious' | 'expert';
+export type AudienceTone = 'kids' | 'general' | 'curious' | 'expert' | 'custom';
 
 export const TONE_OPTIONS: Array<{
   id: AudienceTone;
@@ -9,6 +9,7 @@ export const TONE_OPTIONS: Array<{
   { id: 'general', label: 'General Visitor', helper: 'Friendly, avoids jargon' },
   { id: 'curious', label: 'Curious Explorer', helper: 'Add context and interesting facts' },
   { id: 'expert', label: 'Scholar', helper: 'Respect nuance and terminology' },
+  { id: 'custom', label: 'Custom', helper: 'Bring your own guide style' },
 ];
 
 export type SessionStatus = 'idle' | 'processing' | 'ready' | 'error';
@@ -17,6 +18,11 @@ export interface LabelResult {
   labelText: string;
   explanation: string;
   followupSuggestions: string[];
+}
+
+export interface CustomGuide {
+  name: string;
+  description: string;
 }
 
 export interface ChatMessage {

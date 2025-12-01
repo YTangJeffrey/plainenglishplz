@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { AudienceTone, ChatMessage, LabelResult } from '../types';
+import type { AudienceTone, ChatMessage, CustomGuide, LabelResult } from '../types';
 import { fetchSessionWithHistory } from './db';
 
 interface SessionData {
@@ -7,13 +7,14 @@ interface SessionData {
   tone: AudienceTone;
   labelResult: LabelResult;
   history: ChatMessage[];
+  customGuide: CustomGuide | null;
 }
 
 const sessions = new Map<string, SessionData>();
 
 const createId = () => (typeof randomUUID === 'function' ? randomUUID() : Math.random().toString(36).slice(2, 12));
 
-export const createSession = (tone: AudienceTone, result: LabelResult): SessionData => {
+export const createSession = (tone: AudienceTone, result: LabelResult, customGuide: CustomGuide | null): SessionData => {
   const id = createId();
   const session: SessionData = {
     id,
@@ -27,6 +28,7 @@ export const createSession = (tone: AudienceTone, result: LabelResult): SessionD
         createdAt: Date.now(),
       },
     ],
+    customGuide,
   };
 
   sessions.set(id, session);
@@ -48,6 +50,7 @@ export const getSession = async (sessionId: string): Promise<SessionData | null>
     id: sessionId,
     tone: persisted.tone,
     labelResult: persisted.labelResult,
+    customGuide: persisted.customGuide ?? null,
     history: persisted.history.length > 0
       ? persisted.history
       : [
